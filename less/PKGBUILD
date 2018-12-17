@@ -10,6 +10,7 @@ url="http://www.greenwoodsoftware.com/less"
 groups=('base')
 depends=('ncurses' 'libpcre')
 makedepends=('ncurses-devel' 'pcre-devel')
+validpgpkeys=('AE27252BD6846E7D6EAE1DD6F153A7C833235259') # Mark Nudelman
 source=(http://www.greenwoodsoftware.com/${pkgname}/${pkgname}-${pkgver}{.tar.gz,.sig})
 sha256sums=('503f91ab0af4846f34f0444ab71c4b286123f0044a4964f1ae781486c617f2e2'
             'SKIP')
