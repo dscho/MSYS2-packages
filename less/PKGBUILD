@@ -1,7 +1,7 @@
 # Maintainer: Alexey Pavlov <alexpux@gmail.com>
 
 pkgname=less
-pkgver=530
+pkgver=548
 pkgrel=1
 pkgdesc="A terminal based program for viewing text files"
 license=('GPL3')
@@ -13,7 +13,7 @@ makedepends=('ncurses-devel' 'pcre-devel')
 validpgpkeys=('AE27252BD6846E7D6EAE1DD6F153A7C833235259') # Mark Nudelman
 source=("http://www.greenwoodsoftware.com/${pkgname}/${pkgname}-${pkgver}.tar.gz"
         "${pkgname}-${pkgver}.tar.gz.sig::http://www.greenwoodsoftware.com/${pkgname}/${pkgname}-${pkgver}.sig")
-sha256sums=('503f91ab0af4846f34f0444ab71c4b286123f0044a4964f1ae781486c617f2e2'
+sha256sums=('4844793b1677447767bce58321072996af0ac7f44b628b127e1f73d551b6cd5c'
             'SKIP')
 
 build() {
