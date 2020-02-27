@@ -1,0 +1,51 @@
+# Contributer: Reza Tavakoli <rta.0070@gmail.com>
+
+pkgbase="libcbor"
+pkgname=("${pkgbase}" "${pkgbase}-devel")
+pkgver=0.5.0
+pkgrel=1
+pkgdesc="A C library for parsing and generating CBOR, a general-purpose schema-less binary data format"
+arch=('i686' 'x86_64')
+url="https://github.com/pjk/libcbor"
+license=('MIT')
+makedepends=("cmake" "make" "gcc")
+source=(${pkgbase}-${pkgver}.tar.gz::"$url/archive/v${pkgver}.tar.gz")
+sha256sums=('9bbec94bb385bad3cd2f65482e5d343ddb97e9ffe261123ea0faa3bfea51d320')
+
+prepare() {
+  cd "${srcdir}/${pkgbase}-${pkgver}"
+}
+
+build() {
+  mkdir -p "${srcdir}/${pkgbase}-${pkgver}/build-${CARCH}"
+  cd "${srcdir}/${pkgbase}-${pkgver}/build-${CARCH}"
+
+  #adding will cause errors when make
+  cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCBOR_CUSTOM_ALLOC=ON ..
+
+  sed -i -r 's/libcbor\.a/libcbor.dll.a/g' \
+  	examples/CMakeFiles/*.dir/link.txt
+  #./src/CMakeFiles/cbor_shared.dir/link.txt
+
+  make cbor_shared # make the shared library first
+  make
+  make DESTDIR=${srcdir}/dest install
+}
+
+package_libcbor() {
+  groups=("libraries")
+  cd "${srcdir}/dest"
+  mkdir -p ${pkgdir}/usr/bin
+  cp usr/bin/*.dll ${pkgdir}/usr/bin/
+}
+
+package_libcbor-devel() {
+  pkgdesc="Development headers and library for libcbor"
+  depends=("$pkgbase=$pkgver")
+  groups=("development")
+  cd "${srcdir}/dest"
+  mkdir -p ${pkgdir}/usr/lib
+  mkdir -p ${pkgdir}/usr/include
+  cp -rf usr/lib/* ${pkgdir}/usr/lib
+  cp -rf usr/include/* ${pkgdir}/usr/include
+}
