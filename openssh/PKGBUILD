@@ -8,8 +8,8 @@ url='http://www.openssh.org/portable.html'
 license=('custom:BSD')
 arch=('i686' 'x86_64')
 groups=('net-utils')
-depends=('heimdal' 'libedit' 'libcrypt' 'openssl')
-makedepends=('heimdal-devel' 'libedit-devel' 'libcrypt-devel' 'openssl-devel')
+depends=('libfido2' 'heimdal' 'libedit' 'libcrypt' 'openssl')
+makedepends=('libfido2-devel' 'heimdal-devel' 'libedit-devel' 'libcrypt-devel' 'openssl-devel')
 source=("https://cloudflare.cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/${pkgname}-${pkgver}.tar.gz"{,.asc}
         0001-Forward-port-MSys2-patches.patch
         0002-openssh-work-around-Cygwin-declaring-setkey.patch
@@ -47,7 +47,8 @@ build() {
     --localstatedir=/var \
     --with-libedit \
     --with-kerberos5=/usr \
-    --disable-strip
+    --disable-strip \
+	  --with-security-key-builtin
 
   make
 }
