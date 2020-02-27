@@ -1,0 +1,46 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9481c46..53d6cb6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -27,6 +27,11 @@ add_definitions(-D_FIDO_MAJOR=${FIDO_MAJOR})
+ add_definitions(-D_FIDO_MINOR=${FIDO_MINOR})
+ add_definitions(-D_FIDO_PATCH=${FIDO_PATCH})
+ 
++if (MSYS)
++	set(WIN32 on)
++	add_definitions(-D_BSD_SOURCE)
++endif()
++
+ if(WIN32)
+ 	add_definitions(-DWIN32_LEAN_AND_MEAN)
+ endif()
+diff --git a/examples/CMakeLists.txt b/examples/CMakeLists.txt
+index 957311e..1203592 100644
+--- a/examples/CMakeLists.txt
++++ b/examples/CMakeLists.txt
+@@ -8,7 +8,7 @@ list(APPEND COMPAT_SOURCES
+ 	../openbsd-compat/strlcpy.c
+ )
+ 
+-if(WIN32)
++if(WIN32 AND NOT CYGWIN AND NOT MSYS)
+ 	list(APPEND COMPAT_SOURCES ../openbsd-compat/posix_win.c)
+ endif()
+ 
+diff --git a/tools/CMakeLists.txt b/tools/CMakeLists.txt
+index 4b8ef32..b16ef12 100644
+--- a/tools/CMakeLists.txt
++++ b/tools/CMakeLists.txt
+@@ -8,7 +8,11 @@ list(APPEND COMPAT_SOURCES
+ 	../openbsd-compat/strlcat.c
+ )
+ 
+-if(WIN32)
++if(MSYS)
++	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_NSIG=NSIG")
++endif()
++
++if(WIN32 AND NOT CYGWIN AND NOT MSYS)
+ 	list(APPEND COMPAT_SOURCES
+ 		../openbsd-compat/bsd-getline.c
+ 		../openbsd-compat/explicit_bzero_win32.c

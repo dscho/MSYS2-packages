@@ -1,0 +1,53 @@
+# Contributer: Reza Tavakoli <rta.0070@gmail.com>
+
+pkgbase="libfido2"
+pkgname=("${pkgbase}" "${pkgbase}-devel")
+pkgver=1.3.1
+pkgrel=1
+pkgdesc="A library to support easy, strong authentication (e.g. via USB security tokens or smartcards)"
+arch=('i686' 'x86_64')
+url="https://github.com/Yubico/libfido2"
+license=('BSD-2-Clause')
+depends=("libcbor" "openssl")
+makedepends=("libcbor-devel" "openssl-devel" "cmake" "make" "gcc")
+source=(${pkgbase}-${pkgver}.tar.gz::"$url/archive/v${pkgver}.tar.gz"
+        0001-cmake-msys-fixes.patch)
+sha256sums=('ba35e22016b60c1e4be66dff3cd6a60c1fe4bfa0d91ec0b89ca9da25ebeaaf41'
+            'c3f509a5c139c541d65343997514ac6ea450d810c7a2e36a3b43ee739473408d')
+
+prepare() {
+  cd "${srcdir}/${pkgbase}-${pkgver}"
+  patch -p1 -i ${srcdir}/0001-cmake-msys-fixes.patch
+}
+
+build() {
+  mkdir -p "${srcdir}/${pkgbase}-${pkgver}/build-${CARCH}"
+  cd "${srcdir}/${pkgbase}-${pkgver}/build-${CARCH}"
+
+  #cmake files are changing rapidly on this project, careful when upgrading
+  CMAKE_LEGACY_CYGWIN_WIN32=1 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+
+  make
+  make DESTDIR=${srcdir}/dest install
+}
+
+package_libfido2() {
+  groups=("libraries")
+  cd "${srcdir}/dest"
+  mkdir -p ${pkgdir}/usr/bin
+  mkdir -p ${pkgdir}/usr/share/man/man3
+  #msys-fido2-1.dll is in lib instead of bin
+  cp usr/lib/*.dll ${pkgdir}/usr/bin/
+  cp -r usr/man/* ${pkgdir}/usr/share/man/man3/
+}
+
+package_libfido2-devel() {
+  pkgdesc="Development headers and library for libfido2"
+  depends=("$pkgbase=$pkgver")
+  groups=("development")
+  cd "${srcdir}/dest"
+  mkdir -p ${pkgdir}/usr/lib
+  mkdir -p ${pkgdir}/usr/include
+  cp -rf usr/lib/*.a ${pkgdir}/usr/lib
+  cp -rf usr/include/* ${pkgdir}/usr/include
+}
