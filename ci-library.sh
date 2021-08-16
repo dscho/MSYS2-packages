@@ -48,7 +48,7 @@ _list_changes() {
     local filter="${2}"
     local strip="${3}"
     local git_options=("${@:4}")
-    _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" upstream/main.. | sort -u)" ||
+    _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" 7fc616cd5c47266e8c8e277a56f738f30451538c.. | sort -u)" ||
     _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" HEAD^.. | sort -u)"
 }
 
