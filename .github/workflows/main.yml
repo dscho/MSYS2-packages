@@ -16,10 +16,6 @@ jobs:
       - name: ensure that post-install scripts are run
         shell: bash
         run: bash -lc true
-      - name: action-tmate
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
       - name: CI-Build
         shell: bash
         run: bash -l .ci/ci-build.sh
