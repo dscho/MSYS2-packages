@@ -42,13 +42,13 @@ _as_list() {
     return "${result}"
 }
 
-# Changes since master or from head
+# Changes since main or from HEAD
 _list_changes() {
     local list_name="${1}"
     local filter="${2}"
     local strip="${3}"
     local git_options=("${@:4}")
-    _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" upstream/master.. | sort -u)" ||
+    _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" upstream/main.. | sort -u)" ||
     _as_list "${list_name}" "${filter}" "${strip}" "$(git log "${git_options[@]}" HEAD^.. | sort -u)"
 }
 
