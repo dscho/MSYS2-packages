@@ -12,6 +12,7 @@ jobs:
       - uses: git-for-windows/setup-git-for-windows-sdk@v1
         with:
           flavor: full
+          architecture: i686
       - name: ensure that post-install scripts are run
         shell: bash
         run: bash -lc true
