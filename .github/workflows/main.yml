@@ -18,12 +18,7 @@ jobs:
         run: bash -lc true
       - name: CI-Build
         shell: bash
-        run: bash -l .ci/ci-build.sh
+        run: cd gnupg && makepkg -s --noconfirm --skipchecksums --skippgpcheck
         env:
           MSYSTEM: MSYS
           MAKEFLAGS: -j5
-      - name: "Upload binaries"
-        uses: actions/upload-artifact@v2
-        with:
-          name: msys2-packages
-          path: artifacts/*.pkg.tar.*
