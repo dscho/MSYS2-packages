@@ -15,6 +15,31 @@ jobs:
       - name: install pactoys (needed for `saneman`)
         shell: bash
         run: bash -lc "pacman -S --noconfirm pactoys"
+      - name: Run tmate
+        shell: bash
+        run: |
+          # install tmate
+          pacman -Sy --noconfirm tmate openssh &&
+
+          # restrict SSH access to the "actor", i.e. the GitHub user who triggered this workflow
+          # this requires calling `ssh -i <private-key> [...]` later on
+          mkdir -p ~/.ssh &&
+          curl https://api.github.com/users/${{github.actor}}/keys | jq -r '.[].key' >~/.ssh/authorized_keys &&
+
+          # Generate an SSH key (needed for tmate)
+          echo -e 'y\n' | ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa &&
+
+          # Start tmate session
+          export CHERE_INVOKING=1 &&
+          tmate -S /tmp/tmate.sock -a ~/.ssh/authorized_keys new-session -d &&
+          tmate -S /tmp/tmate.sock wait tmate-ready &&
+
+          # Print SSH invocation every 5 seconds, until tmate session has terminated
+          while test -e /tmp/tmate.sock
+          do
+            tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+            sleep 5
+          done
       - name: CI-Build
         shell: bash
         run: bash -l .ci/ci-build.sh
