@@ -2,8 +2,8 @@
 
 pkgbase="libfido2"
 pkgname=("${pkgbase}" "${pkgbase}-devel")
-pkgver=1.5.0
-pkgrel=1
+pkgver=1.12.0
+pkgrel=0
 pkgdesc="libfido2 provides library functionality and command-line tools to communicate with a FIDO device over USB, and to verify attestation and assertion signatures."
 arch=('i686' 'x86_64')
 url="https://github.com/Yubico/libfido2"
@@ -11,13 +11,13 @@ license=('BSD-2-Clause')
 depends=("libcbor" "openssl")
 makedepends=("libcbor-devel" "openssl-devel" "cmake" "make" "gcc")
 source=(${pkgbase}-${pkgver}.tar.gz::"$url/archive/${pkgver}.tar.gz"
-        0001-msys-fixes.patch)
-sha256sums=('5990f923c9390fe1e6a00ba5d1d1f74030e7344b855e971d9fb7223e70ff3122'
-            '4f439f11f599583584a55050084e768f10e7c710d2f078982adf4154aae9418b')
+        0001-cmake-msys-fixes.patch)
+sha256sums=('813d6d25116143d16d2e96791718a74825da16b774a8d093d96f06ae1730d9c5'
+            '268a68ed5b62a5b03e7af63692490d9b798b19d419e568f827d2fb1af877ad2d')
 
 prepare() {
   cd "${srcdir}/${pkgbase}-${pkgver}"
-  patch -p1 -i ${srcdir}/0001-msys-fixes.patch
+  patch -p1 -i ${srcdir}/0001-cmake-msys-fixes.patch
 }
 
 build() {
