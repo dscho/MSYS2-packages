@@ -1,4 +1,4 @@
-From 52946e100cc1d80935382988b3149c2d949ff612 Mon Sep 17 00:00:00 2001
+From ad22a0c1f9222fe87a2bf46721cb957309a7914e Mon Sep 17 00:00:00 2001
 From: Johannes Schindelin <johannes.schindelin@gmx.de>
 Date: Mon, 22 Aug 2016 09:17:42 +0200
 Subject: [PATCH 1/4] Forward-port MSys2 patches
@@ -8,14 +8,14 @@ Signed-off-by: Johannes Schindelin <johannes.schindelin@gmx.de>
  config.guess                     | 3 +++
  configure.ac                     | 2 +-
  contrib/cygwin/Makefile          | 2 +-
- openbsd-compat/bsd-cygwin_util.c | 2 +-
+ openbsd-compat/bsd-cygwin_util.c | 1 +
  regress/agent-ptrace.sh          | 2 +-
  regress/reexec.sh                | 2 +-
  regress/test-exec.sh             | 3 +++
- 7 files changed, 11 insertions(+), 5 deletions(-)
+ 7 files changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/config.guess b/config.guess
-index 11fda52..0b27271 100755
+index 11fda528..0b272711 100755
 --- a/config.guess
 +++ b/config.guess
 @@ -904,6 +904,9 @@ EOF
@@ -29,20 +29,20 @@ index 11fda52..0b27271 100755
  	echo powerpcle-unknown-solaris2"`echo "$UNAME_RELEASE"|sed -e 's/[^.]*//'`"
  	exit ;;
 diff --git a/configure.ac b/configure.ac
-index 4603837..50413c3 100644
+index de60a1b1..56f374f2 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -622,7 +622,7 @@ case "$host" in
+@@ -681,7 +681,7 @@ case "$host" in
  	AC_DEFINE([DISABLE_UTMP], [1], [Define if you don't want to use utmp])
  	AC_DEFINE([DISABLE_WTMP], [1], [Define if you don't want to use wtmp])
  	;;
 -*-*-cygwin*)
 +*-*-cygwin* | *-*-msys*)
- 	check_for_libcrypt_later=1
  	LIBS="$LIBS /usr/lib/textreadmode.o"
  	AC_DEFINE([HAVE_CYGWIN], [1], [Define if you are on Cygwin])
+ 	AC_DEFINE([USE_PIPES], [1], [Use PIPES instead of a socketpair()])
 diff --git a/contrib/cygwin/Makefile b/contrib/cygwin/Makefile
-index 4b78cd9..02e74ff 100644
+index 4b78cd95..02e74ffc 100644
 --- a/contrib/cygwin/Makefile
 +++ b/contrib/cygwin/Makefile
 @@ -7,7 +7,7 @@ datadir=$(prefix)/share
@@ -55,20 +55,19 @@ index 4b78cd9..02e74ff 100644
  defaultsdir=$(sysconfdir)/defaults/etc
  inetdefdir=$(defaultsdir)/inetd.d
 diff --git a/openbsd-compat/bsd-cygwin_util.c b/openbsd-compat/bsd-cygwin_util.c
-index 54628e2..7d1c489 100644
+index 9ede21d2..9f411ba5 100644
 --- a/openbsd-compat/bsd-cygwin_util.c
 +++ b/openbsd-compat/bsd-cygwin_util.c
-@@ -87,7 +87,7 @@ static struct wenv {
- 	{ NL("ALLUSERSPROFILE=") },
+@@ -88,6 +88,7 @@ static struct wenv {
  	{ NL("COMPUTERNAME=") },
  	{ NL("COMSPEC=") },
--	{ NL("CYGWIN=") },
+ 	{ NL("CYGWIN=") },
 +	{ NL("MSYS=") },
  	{ NL("OS=") },
  	{ NL("PATH=") },
  	{ NL("PATHEXT=") },
 diff --git a/regress/agent-ptrace.sh b/regress/agent-ptrace.sh
-index 9cd68d7..2363579 100644
+index feef5241..32dac353 100644
 --- a/regress/agent-ptrace.sh
 +++ b/regress/agent-ptrace.sh
 @@ -5,7 +5,7 @@ tid="disallow agent ptrace attach"
@@ -81,7 +80,7 @@ index 9cd68d7..2363579 100644
  		exit 0
  		;;
 diff --git a/regress/reexec.sh b/regress/reexec.sh
-index 8966ba5..4b9e76d 100644
+index 8966ba52..4b9e76df 100644
 --- a/regress/reexec.sh
 +++ b/regress/reexec.sh
 @@ -44,7 +44,7 @@ stop_sshd
@@ -94,10 +93,10 @@ index 8966ba5..4b9e76d 100644
  verbose "test reexec fallback"
  
 diff --git a/regress/test-exec.sh b/regress/test-exec.sh
-index 5dc975d..81f9e54 100644
+index c51f8eac..500d5413 100644
 --- a/regress/test-exec.sh
 +++ b/regress/test-exec.sh
-@@ -15,6 +15,9 @@ OSF1*)
+@@ -67,6 +67,9 @@ OSF1*)
  CYGWIN*)
  	os=cygwin
  	;;
@@ -106,7 +105,7 @@ index 5dc975d..81f9e54 100644
 +	;;
  esac
  
- if [ ! -z "$TEST_SSH_PORT" ]; then
+ # If configure tells us to use a different egrep, create a wrapper function
 -- 
-2.26.2
+2.38.0.windows.1
 

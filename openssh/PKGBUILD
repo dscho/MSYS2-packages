@@ -1,8 +1,8 @@
 # Maintainer: Alexey Pavlov <alexpux@gmail.com>
 
 pkgname=openssh
-pkgver=9.0p1
-pkgrel=1
+pkgver=9.1p1
+pkgrel=0
 pkgdesc='Free version of the SSH connectivity tools'
 url='http://www.openssh.org/portable.html'
 license=('custom:BSD')
@@ -15,12 +15,12 @@ source=("https://cloudflare.cdn.openbsd.org/pub/OpenBSD/OpenSSH/portable/${pkgna
         0002-openssh-work-around-Cygwin-declaring-setkey.patch
         0003-openssh-skip-privilege-separation-tests.patch
         0004-Allow-scp-to-copy-files-that-start-with-a-Windows-dr.patch)
-sha256sums=('03974302161e9ecce32153cfa10012f1e65c8f3750f573a73ab1befd5972a28a'
+sha256sums=('19f85009c7e3e23787f0236fbb1578392ab4d4bf9f8ec5fe6bc1cd7e8bfdd288'
             'SKIP'
-            '572d8aa267a493205e3e6d5b194bf1800e161c3745a07e36cdf325b8014c99b8'
-            '7eca1a47c2b523945899d5b7ad0418e00e7a5a30f4d6a6d3414a7328b520fd7e'
-            'e06ff5a726761d067e67e0f42ecad8d4786a8f31d3269dedf034798f3e9103ca'
-            'edad721c623aa96506c23444aedfdea8b7a4659574b55b05755e913879dbf3c6')
+            'a83d6e788bb2c6475660bec0435f36fe3cbc86438be373d86d1d573bb8bb2106'
+            '3dc709506d85d92c989dc986d498525785fc84d66f25ebc7bec80ab1dccbc773'
+            '7b0088ee3282a163bd2efe20b011c713f709d33dac50d3c04ab5500eff69c287'
+            'd82f88c1bd64ea8ffcde735fb80460dd700bca19b039b52c229b5352df3989f7')
 validpgpkeys=('59C2118ED206D927E667EBE3D3E5F56B6D920D30'
               '7168B983815A5EEF59A4ADFD2A3F414E736060BA')
 

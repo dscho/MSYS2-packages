@@ -1,4 +1,4 @@
-From eeb86b75129f0124017aec6c8facde9294cb1441 Mon Sep 17 00:00:00 2001
+From 62c590e72f72c297cee821c1743e44f439ad661e Mon Sep 17 00:00:00 2001
 From: Johannes Schindelin <johannes.schindelin@gmx.de>
 Date: Mon, 22 Aug 2016 17:09:20 +0200
 Subject: [PATCH 2/4] openssh: work around Cygwin declaring setkey
@@ -15,7 +15,7 @@ Signed-off-by: Johannes Schindelin <johannes.schindelin@gmx.de>
  1 file changed, 4 insertions(+)
 
 diff --git a/includes.h b/includes.h
-index 0fd7179..4917afb 100644
+index 6d17ef6d..dbddb926 100644
 --- a/includes.h
 +++ b/includes.h
 @@ -22,6 +22,10 @@
@@ -27,8 +27,8 @@ index 0fd7179..4917afb 100644
 +#undef setkey
 +
  #include <sys/types.h>
- #include <sys/param.h>
  #include <sys/socket.h> /* For CMSG_* */
+ 
 -- 
-2.26.2
+2.38.0.windows.1
 
