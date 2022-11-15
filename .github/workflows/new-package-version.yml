@@ -1,0 +1,153 @@
+name: Open a PR to update a package version
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_url:
+        description: The link to the ticket describing the new component version
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  open-pr:
+    runs-on: windows-latest
+    steps:
+      - name: determine package name/version
+        id: determine
+        uses: actions/github-script@v6
+        env:
+          ISSUE_URL: ${{ github.event.inputs.issue_url }}
+        with:
+          script: |
+            const [ , owner, repo, issue_number ] = process.env.ISSUE_URL
+              .match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/)
+            if (!issue_number) throw new Error('Could not parse URL ${{ github.event.inputs.issue_url }}')
+
+            const { data: { title } } = await github.rest.issues.get({ owner, repo, issue_number })
+            const [ , pkgname, pkgver ] = title.match(/^\[New (\S+) version\] (\d+(?:\.\d+)*)$/)
+            if (!pkgver) throw new Error(`Could not derive package information from issue title ${title}`)
+
+            core.setOutput('pkgname', pkgname)
+            core.setOutput('pkgver', pkgver)
+      - name: set up partial Git for Windows SDK
+        uses: git-for-windows/setup-git-for-windows-sdk@v1
+        with:
+          flavor: minimal
+      - name: download files necessary for `updpkgsums` to work
+        shell: bash
+        run: |
+          for p in \
+            /etc/makepkg.conf \
+            /usr/bin/gettext.exe \
+            /usr/bin/makepkg \
+            /usr/bin/nproc.exe \
+            /usr/bin/pacman.exe \
+            /usr/bin/sha256sum.exe \
+            /usr/bin/updpkgsums
+          do
+            curl -sLo $p https://github.com/git-for-windows/git-sdk-64/raw/HEAD$p || exit 1
+          done &&
+          for p in /usr/share/makepkg
+          do
+            b=${p##*/} &&
+            d=${p%/$b} &&
+            if test "z$b" = "z$d"
+            then
+              d=
+            fi &&
+            tree=$(curl -s https://api.github.com/repos/git-for-windows/git-sdk-64/git/trees/main:${d#/} |
+              jq -r '.tree[] | select(.path | test("^'$b'$")) | .sha') &&
+            mkdir -p $p &&
+            curl -sL https://github.com/git-for-windows/git-sdk-64/tarball/$tree |
+            tar --strip-components=1 -C $p -xzvf - || exit 1
+          done &&
+          ln -s "${COMSPEC%cmd.exe}curl.exe" /usr/bin/
+      - name: partial clone MSYS2-packages
+        shell: bash
+        run: |
+          git clone --depth=1000 --filter=blob:none --no-checkout --single-branch -b ${{github.ref_name}} \
+            https://github.com/${{github.repository}} . &&
+          git sparse-checkout set ${{ steps.determine.outputs.pkgname }} &&
+          git checkout -b ${{ steps.determine.outputs.pkgname }}-${{ steps.determine.outputs.pkgver }} origin/main
+      - name: figure out login associated with the PAT
+        id: login
+        uses: actions/github-script@v6
+        with:
+          script: |
+            try {
+              const { data: { name, email } } = await github.rest.users.getAuthenticated()
+              core.setOutput('name', name)
+              core.setOutput('email', email)
+            } catch (e) {
+              if (e.message !== 'Resource not accessible by integration') throw e
+              core.setOutput('name', 'Git for Windows automation')
+              core.setOutput('email', `git-for-windows@noreply.github.com`)
+            }
+      - name: Set up user
+        shell: bash
+        run: |
+          git config user.name "${{ steps.login.outputs.name }}" &&
+          git config user.email "${{ steps.login.outputs.email }}"
+      - name: update PKGBUILD
+        working-directory: ${{ steps.determine.outputs.pkgname }}
+        id: update
+        shell: bash
+        run: |
+          sed -i -e 's/^\(pkgver=\).*/\1${{ steps.determine.outputs.pkgver }}/' PKGBUILD &&
+          git update-index -q --refresh &&
+          if git diff-files --exit-code
+          then
+            echo "::notice::${{ steps.determine.outputs.pkgname }} already at ${{ steps.determine.outputs.pkgver }}"
+            exit 0
+          fi &&
+
+          updpkgsums &&
+          msg="${{ steps.determine.outputs.pkgname }}: update to ${{ steps.determine.outputs.pkgver }}" &&
+          git commit -sm "$msg" PKGBUILD &&
+          echo "msg=$msg" >>$GITHUB_OUTPUT &&
+          echo "modified=true" >>$GITHUB_OUTPUT
+      - name: push
+        if: steps.update.outputs.modified == 'true'
+        shell: bash
+        run: |
+          basic="$(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}')" &&
+          echo "::add-mask::$basic" &&
+          git -c "http.extraHeader=Authorization: Basic $basic" push --force origin HEAD
+      - name: open PR
+        if: steps.update.outputs.modified == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let body = undefined
+            try {
+              const name = '${{ steps.determine.outputs.pkgname }}'
+              const version = '${{ steps.determine.outputs.pkgver }}'
+
+              if (name === 'mintty') body = `See https://github.com/mintty/mintty/releases/tag/${version} for details.`
+
+              const terms = 'type:issue repo:git-for-windows/git state:open author:app/github-actions label:component-update'
+              const { data } = await github.rest.search.issuesAndPullRequests({
+                q: `"[New ${name} version]" ${version} in:title ${terms}`,
+              })
+              if (data.total_count) body = `${body && `${body}\n\n`}This closes ${data.items[0].html_url}`
+            } catch (e) {
+              console.log(e)
+            }
+
+            const pr = await github.rest.pulls.create({
+              owner: '${{ github.repository_owner }}',
+              repo: '${{ github.repository }}'.replace(/.*\//, ''),
+              base: 'main',
+              draft: true,
+              head: '${{ steps.determine.outputs.pkgname }}-${{ steps.determine.outputs.pkgver }}',
+              maintainer_can_modify: true,
+              title: '${{ steps.update.outputs.msg }}',
+              body
+            })
+            if (pr.status === 201) console.log(`::notice::${pr.data.html_url}`)
+            else console.log(pr)
