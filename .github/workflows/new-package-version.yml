@@ -26,6 +26,7 @@ jobs:
           script: |
             const [ , owner, repo, issue_number ] = process.env.ISSUE_URL
               .match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/issues\/(\d+)$/)
+            core.notice(`owner: ${owner}, repo: ${repo}, issue_number: ${issue_number}`)
             if (!issue_number) throw new Error('Could not parse URL ${{ github.event.inputs.issue_url }}')
 
             const { data: { title } } = await github.rest.issues.get({ owner, repo, issue_number })
@@ -115,7 +116,7 @@ jobs:
         if: steps.update.outputs.modified == 'true'
         shell: bash
         run: |
-          basic="$(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}')" &&
+          basic="$(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}' | base64)" &&
           echo "::add-mask::$basic" &&
           git -c "http.extraHeader=Authorization: Basic $basic" push --force origin HEAD
       - name: open PR
