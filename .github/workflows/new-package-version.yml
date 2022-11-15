@@ -117,8 +117,13 @@ jobs:
         shell: bash
         run: |
           basic="$(printf 'x-access-token:%s' '${{ secrets.GITHUB_TOKEN }}' | base64)" &&
+          echo "${{ secrets.GITHUB_TOKEN }}" >.tmp.gh &&
           echo "::add-mask::$basic" &&
           git -c "http.extraHeader=Authorization: Basic $basic" push --force origin HEAD
+      - uses: mxschmitt/action-tmate@v3
+        if: failure()
+        with:
+          limit-access-to-actor: true
       - name: open PR
         if: steps.update.outputs.modified == 'true'
         uses: actions/github-script@v6
