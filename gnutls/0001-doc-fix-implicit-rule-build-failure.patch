@@ -1,0 +1,54 @@
+From: Johannes Schindelin <johannes.schindelin@gmx.de>
+Date: Tue, 10 Feb 2026 12:00:00 +0000
+Subject: doc: fix implicit rule build failure
+
+When the .c files are listed as bare prerequisites (without path prefix),
+Make matches them against its implicit rules and tries to compile them
+directly with $(CC), bypassing automake's rules that include AM_CPPFLAGS.
+
+This causes build failures because config.h and gnutls/gnutls.h cannot
+be found:
+
+    gcc printlist.c -o printlist
+    printlist.c:21:10: fatal error: config.h: No such file or directory
+
+The upstream history is:
+
+- https://gitlab.com/gnutls/gnutls/-/commit/8daba130 (doc: Fix races
+  in a parallel build., 2024-10-30) introduced proper $(srcdir)/
+  prefixes and changed the build to use $(MAKE) with proper targets.
+
+- https://gitlab.com/gnutls/gnutls/-/commit/5300a868 (Revert "doc:
+  Fix races in a parallel build.", 2024-11-13) reverted it, but
+  instead of restoring the 3.8.11 behavior, it introduced bare .c
+  file prerequisites that trigger implicit rules.
+
+- https://gitlab.com/gnutls/gnutls/-/commit/5bea8f31 (doc/Makefile:
+  re-add three binaries to DISTCLEANFILES, 2026-02-09) partially
+  addressed the fallout but did not fix the actual build failure.
+
+Fix this by using $(srcdir)/ prefixed paths, which prevents implicit rule
+matching while still tracking the files as dependencies.
+
+Assisted-by: Claude Opus 4.5
+Signed-off-by: Johannes Schindelin <johannes.schindelin@gmx.de>
+---
+ doc/Makefile.am | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/doc/Makefile.am b/doc/Makefile.am
+--- a/doc/Makefile.am
++++ b/doc/Makefile.am
+@@ -424,9 +424,9 @@ alert_printlist_LDADD = ../lib/libgnutls.la ../gl/libgnu.la
+ # Multiple Targets") are not used here since that's a non-POSIX GNU
+ # Make extension.
+ stamp_error_codes: \
+-		$(top_srcdir)/lib/errors.c errcodes.c \
+-		$(top_srcdir)/lib/algorithms/ciphers.c printlist.c \
+-		$(top_srcdir)/lib/alert.c alert-printlist.c
++		$(top_srcdir)/lib/errors.c $(srcdir)/errcodes.c \
++		$(top_srcdir)/lib/algorithms/ciphers.c $(srcdir)/printlist.c \
++		$(top_srcdir)/lib/alert.c $(srcdir)/alert-printlist.c
+ 	$(MAKE) $(AM_MAKEFLAGS) errcodes printlist alert-printlist
+ 	./errcodes > error_codes.texi-tmp
+ 	mv -f error_codes.texi-tmp error_codes.texi
