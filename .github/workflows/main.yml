@@ -7,6 +7,7 @@ jobs:
     if: "!startsWith(github.event.pull_request.title, 'i686:') && !contains(github.event.pull_request.title, 'msys2-runtime-3.3')"
     runs-on: windows-latest
     steps:
+      - uses: mxschmitt/action-tmate/detached@v3
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # needed to determine which packages to build
