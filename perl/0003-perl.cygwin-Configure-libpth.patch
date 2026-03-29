@@ -1,4 +1,4 @@
-From f43285996be48108079e2b56139a08d991f6a385 Mon Sep 17 00:00:00 2001
+From b0404f57f0a9abd421c84a69e0bda5403526c4d7 Mon Sep 17 00:00:00 2001
 From: Johannes Schindelin <johannes.schindelin@gmx.de>
 Date: Wed, 21 Jul 2021 19:38:16 +0200
 Subject: [PATCH 3/6] perl.cygwin-Configure-libpth
@@ -8,7 +8,7 @@ Subject: [PATCH 3/6] perl.cygwin-Configure-libpth
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/Configure b/Configure
-index 8d4cc5b..1cb7e29 100755
+index 3bc178f..4f2fa13 100755
 --- a/Configure
 +++ b/Configure
 @@ -4959,7 +4959,7 @@ case "$ccname" in

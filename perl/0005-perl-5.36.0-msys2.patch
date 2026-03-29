@@ -1,4 +1,4 @@
-From a8f30937520cfb10ac9649f544635c7f280b527e Mon Sep 17 00:00:00 2001
+From d59a730a7f3dc6bb45bdbf54cdcf6257d62ae676 Mon Sep 17 00:00:00 2001
 From: Alexey Pavlov <alexpux@gmail.com>
 Date: Tue, 5 Nov 2013 00:30:05 +0400
 Subject: [PATCH 5/6] perl-5.36.0-msys2
@@ -13,12 +13,11 @@ Subject: [PATCH 5/6] perl-5.36.0-msys2
  cpan/Win32/t/Unicode.t          | 14 ++++++++------
  cpan/autodie/t/chown.t          |  2 +-
  cpan/autodie/t/version_tag.t    |  2 +-
- dist/Net-Ping/t/450_service.t   |  4 ++--
  ext/DynaLoader/DynaLoader_pm.PL |  1 +
  ext/NDBM_File/Makefile.PL       |  2 +-
  ext/ODBM_File/Makefile.PL       |  2 +-
  ext/POSIX/t/wrappers.t          |  2 ++
- hints/cygwin.sh                 | 15 +++------------
+ hints/cygwin.sh                 | 13 ++-----------
  t/io/fs.t                       |  9 ++++++---
  t/io/pvbm.t                     |  2 +-
  t/lib/cygwin.t                  |  2 +-
@@ -27,13 +26,13 @@ Subject: [PATCH 5/6] perl-5.36.0-msys2
  t/porting/exec-bit.t            |  2 +-
  t/porting/globvar.t             |  2 +-
  utils/perlbug.PL                |  4 ++--
- 23 files changed, 48 insertions(+), 47 deletions(-)
+ 22 files changed, 45 insertions(+), 44 deletions(-)
 
 diff --git a/Configure b/Configure
-index 1cb7e29..262386b 100755
+index 4f2fa13..1a2fcc3 100755
 --- a/Configure
 +++ b/Configure
-@@ -8741,10 +8741,10 @@ true)
+@@ -8744,10 +8744,10 @@ true)
  			dflt=libperl.$so
  			;;
  		cygwin*) # ld links now against the dll directly
@@ -46,7 +45,7 @@ index 1cb7e29..262386b 100755
  			dflt=$majmin
  			;;
  		*)	# Try to guess based on whether libc has major.minor.
-@@ -23896,7 +23896,7 @@ BeOS BIG_ENDIAN BIT_MSF BSD bsd bsd43 bsd4_2 BSD4_3 bsd4_3 bsd4_4
+@@ -23923,7 +23923,7 @@ BeOS BIG_ENDIAN BIT_MSF BSD bsd bsd43 bsd4_2 BSD4_3 bsd4_3 bsd4_4
  BSDCOMPAT bsdi BSD_4_3 BSD_4_4 BSD_NET2 BSD_TIME BSD_TYPES bull
  byteorder byte_order
  c cadmus clang clipper CMU COFF COMPILER_VERSION concurrent
@@ -78,10 +77,10 @@ index 0abd0a4..e98d69e 100644
  	-rm -f config.over
  
 diff --git a/Makefile.SH b/Makefile.SH
-index ff48db8..38d994b 100755
+index 7236391..af76bef 100755
 --- a/Makefile.SH
 +++ b/Makefile.SH
-@@ -1365,7 +1365,7 @@ _mopup:
+@@ -1373,7 +1373,7 @@ _mopup:
  	-rm -f perl.exp ext.libs $(generated_pods) uni.data $(mini_only_objs) pod/roffitall
  	-rm -f perl.export perl.dll perl.libexp perl.map perl.def
  	-rm -f *perl.xok
@@ -90,7 +89,7 @@ index ff48db8..38d994b 100755
  	-rm -f $(PERL_EXE) $(MINIPERL_EXE) $(LIBPERL) libperl.*
  	-rm -f config.arch config.over $(DTRACE_H)
  
-@@ -1535,7 +1535,7 @@ case "$targethost" in
+@@ -1544,7 +1544,7 @@ case "$targethost" in
  '') $spitshell >>$Makefile <<'!NO!SUBS!'
  test_prep test-prep: test_prep_pre $(MINIPERL_EXE) $(unidatafiles) $(PERL_EXE) \
  	$(dynamic_ext) $(TEST_PERL_DLL) runtests $(generated_pods) common_build
@@ -100,7 +99,7 @@ index ff48db8..38d994b 100755
  !NO!SUBS!
  ;;
 diff --git a/configpm b/configpm
-index 07219d8..a3417e5 100755
+index 0c46b9e..0194d76 100755
 --- a/configpm
 +++ b/configpm
 @@ -465,7 +465,7 @@ EOT
@@ -199,30 +198,8 @@ index 4860a49..9bc8178 100644
  
      eval {
          use autodie;
-diff --git a/dist/Net-Ping/t/450_service.t b/dist/Net-Ping/t/450_service.t
-index 8bfd91e..bd9cd8b 100644
---- a/dist/Net-Ping/t/450_service.t
-+++ b/dist/Net-Ping/t/450_service.t
-@@ -78,7 +78,7 @@ is($p->ping("127.0.0.1"), 1, 'first port is reachable');
- $p->{port_num} = $port2;
- 
- {
--    local $TODO = "Believed not to work on $^O" if $^O =~ /^(?:MSWin32|os390)$/;
-+    local $TODO = "Believed not to work on $^O" if $^O =~ /^(?:MSWin32|cygwin|os390)$/;
-     is($p->ping("127.0.0.1"), 1, 'second port is reachable');
- }
- 
-@@ -133,7 +133,7 @@ SKIP: {
- 
-   {
-     local $TODO = "Believed not to work on $^O"
--      if $^O =~ /^(?:MSWin32|os390)$/;
-+      if $^O =~ /^(?:MSWin32|cygwin|os390)$/;
-     is($p->ack(), '127.0.0.1', 'IP should be reachable');
-   }
- }
 diff --git a/ext/DynaLoader/DynaLoader_pm.PL b/ext/DynaLoader/DynaLoader_pm.PL
-index 0f13f9a..2119291 100644
+index 5506dd3..90d21cf 100644
 --- a/ext/DynaLoader/DynaLoader_pm.PL
 +++ b/ext/DynaLoader/DynaLoader_pm.PL
 @@ -482,6 +482,7 @@ sub dl_findfile {
@@ -260,10 +237,10 @@ index 0ae31f9..76f8f4f 100644
      VERSION_FROM => 'ODBM_File.pm', 
  );
 diff --git a/ext/POSIX/t/wrappers.t b/ext/POSIX/t/wrappers.t
-index 76d4a08..05fb7d0 100644
+index 3683e7a..426c578 100644
 --- a/ext/POSIX/t/wrappers.t
 +++ b/ext/POSIX/t/wrappers.t
-@@ -179,7 +179,9 @@ foreach ([undef, 0, 'chdir', NOT_HERE],
+@@ -179,7 +179,9 @@ foreach ([undef, !!0, 'chdir', NOT_HERE],
      my $func = do {no strict 'refs'; \&{"POSIX::$name"}};
  
   SKIP: {
@@ -274,7 +251,7 @@ index 76d4a08..05fb7d0 100644
  	is(&$func(@args), $expect, $name);
  	isnt($!, '', "$name reported an error");
 diff --git a/hints/cygwin.sh b/hints/cygwin.sh
-index 25468ce..df49a45 100644
+index 158e89d..b98212a 100644
 --- a/hints/cygwin.sh
 +++ b/hints/cygwin.sh
 @@ -27,7 +27,7 @@ libswanted=`echo " $libswanted " | sed -e 's/ m / /g'`
@@ -286,19 +263,16 @@ index 25468ce..df49a45 100644
  loclibpth=' '
  glibpth=' '
  plibpth=' '
-@@ -38,9 +38,9 @@ libswanted="$libswanted gdbm_compat"
+@@ -38,7 +38,7 @@ libswanted="$libswanted gdbm_compat"
  test -z "$optimize" && optimize='-O3'
  man3ext='3pm'
  test -z "$use64bitint" && use64bitint='define'
 -test -z "$useithreads" && useithreads='define'
 +test -z "$usethreads" && usethreads='define'
  test -z "$usemymalloc" && usemymalloc='undef'
--ccflags="$ccflags -U__STRICT_ANSI__ -D_GNU_SOURCE"
-+ccflags="$ccflags -DPERL_USE_SAFE_PUTENV -U__STRICT_ANSI__ -D_GNU_SOURCE"
+ ccflags="$ccflags -D_GNU_SOURCE"
  # - otherwise i686-cygwin
- archname='cygwin'
- 
-@@ -96,12 +96,3 @@ lddlflags="$lddlflags $ldflags"
+@@ -99,12 +99,3 @@ lddlflags="$lddlflags $ldflags"
  #ldflags="$ldflags -s"
  #ccdlflags="$ccdlflags -s"
  #lddlflags="$lddlflags -s"
@@ -372,7 +346,7 @@ index ba86170..4579f1a 100644
  is(Cygwin::is_binmount("/"),  $binmode ? 1 : '', "check / for binmount");
  
 diff --git a/t/op/require_errors.t b/t/op/require_errors.t
-index 2d7c587..e1935b4 100644
+index 01458fe..ef91d36 100644
 --- a/t/op/require_errors.t
 +++ b/t/op/require_errors.t
 @@ -173,6 +173,7 @@ chmod 0333, $mod_file;
@@ -384,7 +358,7 @@ index 2d7c587..e1935b4 100644
      push @INC, '../lib';
      require Cwd;
 diff --git a/t/op/stat.t b/t/op/stat.t
-index b391dd0..30872aa 100644
+index 056d719..be5672c 100644
 --- a/t/op/stat.t
 +++ b/t/op/stat.t
 @@ -47,7 +47,7 @@ my $Is_MPRAS   = $^O =~ /svr4/ && -f '/etc/.relid';
@@ -405,7 +379,7 @@ index b391dd0..30872aa 100644
  
      SKIP: {
          # Going to try to switch away from root.  Might not work.
-@@ -564,7 +564,8 @@ SKIP: {
+@@ -567,7 +567,8 @@ SKIP:
  	skip "Can't check if admin user in miniperl", 1
  	  if $^O =~ /^(cygwin|MSWin32|msys)$/ && is_miniperl();
  	skip "Readable by group/other means readable by me on $^O", 1 if $^O eq 'VMS'

@@ -1,4 +1,4 @@
-From 186ae462fea579b932bc0dc3b1cc688dee569e05 Mon Sep 17 00:00:00 2001
+From f180a07b70368e1bca5966cf42bf6c1b2ef84c37 Mon Sep 17 00:00:00 2001
 From: Alexey Pavlov <alexpux@gmail.com>
 Date: Tue, 14 Feb 2017 14:45:21 +0300
 Subject: [PATCH 2/6] perl.cygwin-Configure-libsearch
@@ -8,7 +8,7 @@ Subject: [PATCH 2/6] perl.cygwin-Configure-libsearch
  1 file changed, 15 insertions(+), 9 deletions(-)
 
 diff --git a/Configure b/Configure
-index d6b63c0..8d4cc5b 100755
+index 4b6b895..3bc178f 100755
 --- a/Configure
 +++ b/Configure
 @@ -330,6 +330,7 @@ _o=''

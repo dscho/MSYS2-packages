@@ -2,7 +2,7 @@
 
 pkgbase=perl
 pkgname=('perl' 'perl-doc' 'perl-devel')
-pkgver=5.40.3
+pkgver=5.42.1
 pkgrel=1
 pkgdesc="A highly capable, feature-rich programming language"
 arch=(i686 x86_64)
@@ -26,17 +26,17 @@ source=(https://www.cpan.org/src/5.0/perl-${pkgver}.tar.xz
         0005-perl-5.36.0-msys2.patch
         0006-Skip-a-regeneration-check-in-unrelated-git-repositor.patch)
 options=('makeflags' '!purge' 'emptydirs')
-sha256sums=('65f63b4763ab6cb9bb3d5731dd10369e1705be3c59be9847d453eb60b349ab43'
+sha256sums=('098c7f76e7a28443f6403610c7e339777905360c5225798fd142b8d33b05c6b4'
             '91bf8a45a3f04f51fe0eca146a71e278d41dbde19ba60dabc1e41c4639477c07'
             '478a52dc440d5ca324f4c95238b39cc8c90d5d7d8d5601fa085ffef79fea04f4'
             '11ce66bcf4803b0bf27179a32ce53f41bcdfa967c4c0d54ac103dbc4951d18a3'
             'fe91f1de38af525cb82503feef553b71299c52ea52c01b1959143f48f4051ffa'
-            'a6a411f18f21c4e6b9a692cc438da2ca7558c16588e854520a3e0e6255c5dfff'
-            '8ce2a7b70c9d1965ddabd387d17eea26ca8f9f71850012c5ee1eba7f29d27b31'
-            '181ee04492fd610b87bdc299f17966868082c97e7df492cb6759f7974d4f50ff'
-            '061154deffc4d9dbd46d3b7ddb430ca5a725e73fcf4e2405ba1351db21772974'
-            '718f220c23f21ee302399c45d6d562d4d8ec36d5f79503a38fe57f2a102d344b'
-            'c65bdf20e0aba1bc023d4a2c06e5e06e4daf92d562ad98562addabff06203365')
+            '4f67a62674f3593e4fa588463d0b0c577aa08fb66efaa9c9ef9a031a07e300f7'
+            'f986d1f86ebae51c96e555c7156e6e27a0d319dbcfe6190d098333dd0ec2f4f7'
+            '6b514317b0b3696384728c9bb496e8ddecf203634d70695e293cda37ce1d715c'
+            'ee0868085b8e7770152ab84fe8ab705170cd90ab84e2249866f2a31ed1c439ac'
+            'a9fb66a9aefc936f7e8ec48ea8f0a3120d341a5bfc301f2499782bdb06203b95'
+            'f5bae5a839181cfa4da972b362bf82facefee70dbcb330378fe17c6a3cf8e584')
 
 prepare() {
   chmod -R 0666 ${srcdir}/${pkgname}-${pkgver}
