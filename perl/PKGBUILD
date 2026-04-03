@@ -113,7 +113,7 @@ check() {
   cd ${srcdir}/${pkgname}-${pkgver}
   TEST_JOBS=$(echo $MAKEFLAGS | sed 's/.*-j\([0-9][0-9]*\).*/\1/') \
   MSYS=winsymlinks:nativestrict \
-  make test_harness || true
+  make test_harness
   #make test
 }
 
