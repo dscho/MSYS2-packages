@@ -1,0 +1,212 @@
+name: drill bash regression
+
+# Re-run a single Git test script many times with each of two bash
+# builds in randomized order, against the exact same minimal SDK +
+# git-artifacts tarballs that the original comparison used.  Produces
+# a CSV of (iteration, variant, seconds) for offline analysis.
+
+on:
+  workflow_dispatch:
+    inputs:
+      patched_run_id:
+        description: 'bash-with-git-tests run id that uploaded the patched bash-pkg'
+        default: '25742172112'
+      baseline_run_id:
+        description: 'bash-with-git-tests run id that uploaded the baseline bash-pkg'
+        default: '25742171983'
+      test_script:
+        description: 'test script in git/t to drill into'
+        default: 't6433-merge-toplevel.sh'
+      iterations:
+        description: 'paired iterations (one of each variant per iteration)'
+        default: '20'
+  push:
+    paths:
+      - '.github/workflows/drill-bash-regression.yml'
+
+permissions:
+  contents: read
+
+env:
+  LC_CTYPE: C.UTF-8
+  PATCHED_RUN_ID: ${{ github.event.inputs.patched_run_id || '25742172112' }}
+  BASELINE_RUN_ID: ${{ github.event.inputs.baseline_run_id || '25742171983' }}
+  TEST_SCRIPT: ${{ github.event.inputs.test_script || 't6433-merge-toplevel.sh' }}
+  ITERATIONS: ${{ github.event.inputs.iterations || '20' }}
+
+jobs:
+  drill:
+    runs-on: windows-latest
+    steps:
+      - name: Get the latest successful ci-artifacts run id
+        id: ci-run
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const info = await github.rest.actions.listWorkflowRuns({
+              owner: 'git-for-windows',
+              repo: 'git-sdk-64',
+              workflow_id: 938271,
+              status: 'success',
+              per_page: 1
+            })
+            return info.data.workflow_runs[0].id
+
+      - name: Download minimal SDK and git-artifacts
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_RUN_ID: ${{ steps.ci-run.outputs.result }}
+        run: |
+          set -ex
+          curl -H "Authorization: token $GITHUB_TOKEN" \
+            -L https://api.github.com/repos/git-for-windows/git-sdk-64/actions/runs/$CI_RUN_ID/artifacts |
+            jq -r '.artifacts[] | [.name, .archive_download_url] | @tsv' |
+            tr -d '\r' |
+            while read name url; do
+              case "$name" in
+              minimal-sdk|git-artifacts)
+                curl -H "Authorization: token $GITHUB_TOKEN" \
+                  -#sLo /tmp/"$name".zip "$url"
+                unzip -qo /tmp/"$name".zip
+                ;;
+              esac
+            done
+          ls -la git-sdk-x86_64-minimal.tar.gz git-artifacts.tar.gz
+
+      - name: Download both bash-pkg artifacts
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          fetch() {
+            local run_id=$1 dest=$2
+            url=$(curl -H "Authorization: token $GITHUB_TOKEN" \
+              -L https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id/artifacts |
+              jq -r '.artifacts[] | select(.name=="bash-pkg") | .archive_download_url')
+            test -n "$url"
+            curl -H "Authorization: token $GITHUB_TOKEN" -L -#so "$dest" "$url"
+          }
+          fetch "$PATCHED_RUN_ID"  /tmp/bash-pkg-patched.zip
+          fetch "$BASELINE_RUN_ID" /tmp/bash-pkg-baseline.zip
+          mkdir -p /tmp/patched-pkg /tmp/baseline-pkg
+          unzip -q /tmp/bash-pkg-patched.zip  -d /tmp/patched-pkg
+          unzip -q /tmp/bash-pkg-baseline.zip -d /tmp/baseline-pkg
+          ls -la /tmp/patched-pkg /tmp/baseline-pkg
+
+      - name: Drill the test under both variants in randomized order
+        shell: bash
+        run: |
+          set -e
+
+          # Stage the minimal SDK.  Everything below runs in a single
+          # step so we don't have to plumb derived paths through
+          # $GITHUB_ENV; that propagation has been flaky here when the
+          # value contains MSYS-style absolute paths.
+          mkdir -p minimal-sdk
+          tar -C minimal-sdk -xzf git-sdk-x86_64-minimal.tar.gz
+          test -f minimal-sdk/usr/bin/bash.exe
+          test -f minimal-sdk/usr/bin/sh.exe
+
+          # Extract just bash.exe and sh.exe from each variant's
+          # .pkg.tar.zst so the loop below can cp them into place.
+          for v in patched baseline; do
+            pkg=$(ls /tmp/$v-pkg/bash-*.pkg.tar.* | head -n1)
+            test -n "$pkg"
+            mkdir -p /tmp/$v-bin
+            tar -C /tmp/$v-bin -xf "$pkg" usr/bin/bash.exe usr/bin/sh.exe
+          done
+
+          # git-artifacts has bin-wrappers that hard-code an absolute
+          # GIT_EXEC_PATH; the tarball must be extracted at that
+          # location or every git call inside the test framework bails
+          # with "you haven't built things yet, have you?".  Read the
+          # location out of the bin-wrapper itself, the same way the
+          # bash-with-git-tests workflow does.
+          extract_loc=$(tar Oxf git-artifacts.tar.gz git/bin-wrappers/git |
+            sed -n "s|^GIT_EXEC_PATH='\\(.*\\)/git'$|\\1|p")
+          test -n "$extract_loc"
+          echo "git-artifacts extract location: $extract_loc"
+          mkdir -p "$extract_loc"
+          tar -C "$extract_loc" -xzf git-artifacts.tar.gz
+
+          SDK_BIN=$PWD/minimal-sdk/usr/bin
+          BASH_BIN=$SDK_BIN/bash.exe
+          TEST_DIR=$extract_loc/git/t
+          test -f "$TEST_DIR/$TEST_SCRIPT"
+
+          echo "iter,variant,seconds" >/tmp/drill.csv
+
+          # Sanity-check: each variant can run the test to completion
+          # on its own before we start the loop.  Failures past this
+          # point are real regressions, not setup issues.
+          for v in patched baseline; do
+            cp /tmp/$v-bin/usr/bin/bash.exe "$SDK_BIN/bash.exe"
+            cp /tmp/$v-bin/usr/bin/sh.exe   "$SDK_BIN/sh.exe"
+            (cd "$TEST_DIR" && "$BASH_BIN" "$TEST_SCRIPT") \
+              >/tmp/sanity-$v.log 2>&1 ||
+              { echo "Sanity run of $v failed:"; tail -40 /tmp/sanity-$v.log; exit 1; }
+            echo "$v: sanity run ok ($(wc -l </tmp/sanity-$v.log) lines)"
+          done
+
+          for i in $(seq 1 "$ITERATIONS"); do
+            # Randomize order across the two variants per iteration.
+            if [ $((RANDOM % 2)) -eq 0 ]; then
+              order="patched baseline"
+            else
+              order="baseline patched"
+            fi
+            echo "=== iter $i: $order ==="
+            for variant in $order; do
+              # Replace bash.exe AND sh.exe inside the minimal SDK so
+              # that any sub-process the test framework spawns (the
+              # outer shell, $SHELL_PATH-style invocations, the many
+              # one-shot `sh -c` calls in test-lib.sh) picks up the
+              # variant under test.
+              cp /tmp/$variant-bin/usr/bin/bash.exe "$SDK_BIN/bash.exe"
+              cp /tmp/$variant-bin/usr/bin/sh.exe   "$SDK_BIN/sh.exe"
+              start_ns=$(date +%s%N)
+              (cd "$TEST_DIR" && "$BASH_BIN" "$TEST_SCRIPT") \
+                  >/tmp/run-$i-$variant.log 2>&1 ||
+                { echo "Iter $i variant $variant FAILED:"; \
+                  tail -40 /tmp/run-$i-$variant.log; }
+              end_ns=$(date +%s%N)
+              elapsed=$(awk -v s="$start_ns" -v e="$end_ns" \
+                'BEGIN{printf "%.3f", (e-s)/1e9}')
+              echo "$i,$variant,$elapsed" >>/tmp/drill.csv
+              printf '  %-9s %s s\n' "$variant" "$elapsed"
+            done
+          done
+
+          echo
+          echo "=== summary ==="
+          cat /tmp/drill.csv
+
+      - name: Compute paired summary
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          awk -F, '
+            NR==1 { next }
+            $2 == "patched"  { p_sum += $3; p_n++; p[$1] = $3 }
+            $2 == "baseline" { b_sum += $3; b_n++; b[$1] = $3 }
+            END {
+              printf "patched  mean = %.3f s over %d runs\n",  p_sum / p_n, p_n
+              printf "baseline mean = %.3f s over %d runs\n", b_sum / b_n, b_n
+              printf "ratio (patched/baseline) = %.3f\n", \
+                (p_sum / p_n) / (b_sum / b_n)
+              printf "paired deltas (patched - baseline):\n"
+              for (i in p) printf "  iter %s: %.3f\n", i, p[i] - b[i]
+            }
+          ' /tmp/drill.csv
+
+      - name: Upload drill results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: drill-results
+          path: |
+            /tmp/drill.csv
+            /tmp/run-*.log
+            /tmp/sanity-*.log
